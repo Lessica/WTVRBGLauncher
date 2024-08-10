@@ -102,7 +102,6 @@ static UIView *gSnapshotView = nil;
             [prevBundleIdentifier isEqualToString:@"com.sogou.sogouinput"] || 
             [prevBundleIdentifier isEqualToString:@"com.iflytek.inputime"]
         )) {
-            gFrozenAppSceneIdentifier = nil;
             return YES;
         }
     }
@@ -118,20 +117,24 @@ static UIView *gSnapshotView = nil;
     %orig;
     if (self.application.bundleIdentifier) {
         if ([gFrozenAppSceneIdentifier isEqualToString:self.application.bundleIdentifier]) {
+            gFrozenAppSceneIdentifier = nil;
             if (!gSnapshotView) {
                 UIWindow *window = self.window;
                 gSnapshotView = [window snapshotViewAfterScreenUpdates:NO];
                 gSnapshotView.frame = window.bounds;
                 gSnapshotView.userInteractionEnabled = NO;
                 [window addSubview:gSnapshotView];
+                return;
             }
         }
-        if (!gFrozenAppSceneIdentifier && gSnapshotView) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                gFrozenAppSceneIdentifier = nil;
-                [gSnapshotView removeFromSuperview];
-                gSnapshotView = nil;
-            });
+        if (gSnapshotView) {
+            UIView *viewToRemove = gSnapshotView;
+            gSnapshotView = nil;
+            [UIView animateWithDuration:0.3 delay:0.3 options:kNilOptions animations:^{
+                viewToRemove.alpha = 0;
+            } completion:^(BOOL finished) {
+                [viewToRemove removeFromSuperview];
+            }];
         }
     }
 }
