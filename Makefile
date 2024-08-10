@@ -5,7 +5,7 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME := WTVRBGLauncher
 
-WTVRBGLauncher_FILES += Tweak.x
+WTVRBGLauncher_FILES += WTVRBGLauncher.x
 WTVRBGLauncher_CFLAGS += -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
