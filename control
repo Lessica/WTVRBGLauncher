@@ -1,9 +1,9 @@
 Package: com.82flex.wtvrbglauncher
-Name: WTVRBGLauncher
-Version: 0.0.3
+Name: 语音转文字免跳转
+Version: 1.0
 Architecture: iphoneos-arm
-Description: An awesome MobileSubstrate tweak!
+Description: 中文输入法语音转文字免跳转插件。无设置选项，安装并注销后立即生效。支持的输入法：微信、百度、搜狗、讯飞
 Maintainer: Lessica
 Author: Lessica
 Section: Tweaks
-Depends: mobilesubstrate (>= 0.9.5000)
+Depends: firmware (>= 14.0), mobilesubstrate, preferenceloader

@@ -53,9 +53,41 @@ typedef NS_ENUM(unsigned, SBActivationSetting) {
 static NSString *gFrozenAppSceneIdentifier = nil;
 static UIView *gSnapshotView = nil;
 
+static BOOL gIsEnabled = NO;
+static BOOL gIsWeTypeEnabled = NO;
+static BOOL gIsBaiduEnabled = NO;
+static BOOL gIsSogouEnabled = NO;
+static BOOL gIsXunFeiEnabled = NO;
+
+static NSTimeInterval gAnimationInterval = 0.3;
+static NSTimeInterval gAnimationDelay = 0.3;
+
+static void ReloadPrefs() {
+    static NSUserDefaults *prefs = nil;
+    if (!prefs) {
+        prefs = [[NSUserDefaults alloc] initWithSuiteName:@"com.82flex.wtvrbgprefs"];
+    }
+
+    NSDictionary *settings = [prefs dictionaryRepresentation];
+
+	gIsEnabled = settings[@"IsEnabled"] ? [settings[@"IsEnabled"] boolValue] : YES;
+    gIsWeTypeEnabled = settings[@"IsWeTypeEnabled"] ? [settings[@"IsWeTypeEnabled"] boolValue] : YES;
+    gIsBaiduEnabled = settings[@"IsBaiduEnabled"] ? [settings[@"IsBaiduEnabled"] boolValue] : YES;
+    gIsSogouEnabled = settings[@"IsSogouEnabled"] ? [settings[@"IsSogouEnabled"] boolValue] : YES;
+    gIsXunFeiEnabled = settings[@"IsXunFeiEnabled"] ? [settings[@"IsXunFeiEnabled"] boolValue] : YES;
+    gAnimationInterval = settings[@"AnimationInterval"] ? [settings[@"AnimationInterval"] doubleValue] / 1000.0 : 0.3;
+    gAnimationDelay = settings[@"AnimationDelay"] ? [settings[@"AnimationDelay"] doubleValue] / 1000.0 : 0.3;
+
+    HBLogDebug(@"[WTVRBGLauncher] ReloadPrefs: %@", settings);
+}
+
 %hook SBWorkspaceTransitionContext
 
 - (BOOL)animationDisabled {
+    BOOL disabled = %orig;
+    if (!gIsEnabled) {
+        return disabled;
+    }
     SBApplicationSceneEntity *prevEntity = self.previousEntities.anyObject;
     SBApplicationSceneEntity *nextEntity = self.entities.anyObject;
     Class SBApplicationSceneEntityCls = %c(SBApplicationSceneEntity);
@@ -63,7 +95,8 @@ static UIView *gSnapshotView = nil;
         NSString *prevBundleIdentifier = prevEntity.application.bundleIdentifier;
         NSString *nextBundleIdentifier = nextEntity.application.bundleIdentifier;
         NSString *sourceIdentifier = (NSString *)[nextEntity.activationSettings objectForActivationSetting:SBActivationSettingSourceIdentifier];
-        if ([nextBundleIdentifier isEqualToString:@"com.baidu.inputMethod"] && 
+        if (gIsBaiduEnabled &&
+            [nextBundleIdentifier isEqualToString:@"com.baidu.inputMethod"] && 
             [sourceIdentifier isKindOfClass:[NSString class]] && 
             [sourceIdentifier isEqualToString:@"com.baidu.inputMethod.keyboard"]
         ) {
@@ -71,15 +104,17 @@ static UIView *gSnapshotView = nil;
             return YES;
         }
         NSURL *nextURL = [nextEntity.activationSettings objectForActivationSetting:SBActivationSettingURL];
-        if ([nextBundleIdentifier isEqualToString:@"com.tencent.wetype"] && 
+        if (gIsWeTypeEnabled &&
+            [nextBundleIdentifier isEqualToString:@"com.tencent.wetype"] && 
             [nextURL isKindOfClass:[NSURL class]] && 
-            [nextURL.scheme isEqualToString:@"wetype"] 
-            && [nextURL.host isEqualToString:@"WXKBURL_STARTVOICERECORD"]
+            [nextURL.scheme isEqualToString:@"wetype"] &&
+            [nextURL.host isEqualToString:@"WXKBURL_STARTVOICERECORD"]
         ) {
             gFrozenAppSceneIdentifier = prevBundleIdentifier;
             return YES;
         }
-        if ([nextBundleIdentifier isEqualToString:@"com.sogou.sogouinput"] && 
+        if (gIsSogouEnabled && 
+            [nextBundleIdentifier isEqualToString:@"com.sogou.sogouinput"] && 
             [nextURL isKindOfClass:[NSURL class]] && 
             [nextURL.scheme isEqualToString:@"com.sogou.sogouinput.ext"] && 
             [nextURL.absoluteString containsString:@":path=SpeechInput&"]
@@ -87,7 +122,8 @@ static UIView *gSnapshotView = nil;
             gFrozenAppSceneIdentifier = prevBundleIdentifier;
             return YES;
         }
-        if ([nextBundleIdentifier isEqualToString:@"com.iflytek.inputime"] &&
+        if (gIsXunFeiEnabled &&
+            [nextBundleIdentifier isEqualToString:@"com.iflytek.inputime"] &&
             [nextURL isKindOfClass:[NSURL class]] &&
             [nextURL.scheme isEqualToString:@"xfime"] &&
             [nextURL.host isEqualToString:@"activate_for_record"]
@@ -97,15 +133,15 @@ static UIView *gSnapshotView = nil;
         }
         BOOL isFromBreadcrumb = [nextEntity.activationSettings flagForActivationSetting:SBActivationSettingFromBreadcrumb];
         if (isFromBreadcrumb && (
-            [prevBundleIdentifier isEqualToString:@"com.tencent.wetype"] || 
-            [prevBundleIdentifier isEqualToString:@"com.baidu.inputMethod"] || 
-            [prevBundleIdentifier isEqualToString:@"com.sogou.sogouinput"] || 
-            [prevBundleIdentifier isEqualToString:@"com.iflytek.inputime"]
+            (gIsWeTypeEnabled && [prevBundleIdentifier isEqualToString:@"com.tencent.wetype"]) || 
+            (gIsBaiduEnabled && [prevBundleIdentifier isEqualToString:@"com.baidu.inputMethod"]) || 
+            (gIsSogouEnabled && [prevBundleIdentifier isEqualToString:@"com.sogou.sogouinput"]) || 
+            (gIsXunFeiEnabled && [prevBundleIdentifier isEqualToString:@"com.iflytek.inputime"])
         )) {
             return YES;
         }
     }
-    return %orig;
+    return disabled;
 }
 
 %end
@@ -115,6 +151,9 @@ static UIView *gSnapshotView = nil;
 - (void)layoutSubviews
 {
     %orig;
+    if (!gIsEnabled) {
+        return;
+    }
     if (self.application.bundleIdentifier) {
         if ([gFrozenAppSceneIdentifier isEqualToString:self.application.bundleIdentifier]) {
             gFrozenAppSceneIdentifier = nil;
@@ -130,13 +169,29 @@ static UIView *gSnapshotView = nil;
         if (gSnapshotView) {
             UIView *viewToRemove = gSnapshotView;
             gSnapshotView = nil;
-            [UIView animateWithDuration:0.3 delay:0.3 options:kNilOptions animations:^{
-                viewToRemove.alpha = 0;
-            } completion:^(BOOL finished) {
-                [viewToRemove removeFromSuperview];
-            }];
+            [UIView animateWithDuration:gAnimationInterval 
+                delay:gAnimationDelay 
+                options:kNilOptions 
+                animations:^{
+                    viewToRemove.alpha = 0;
+                } 
+                completion:^(BOOL finished) {
+                    [viewToRemove removeFromSuperview];
+                }];
         }
     }
 }
 
 %end
+
+%ctor {
+    ReloadPrefs();
+    CFNotificationCenterAddObserver(
+        CFNotificationCenterGetDarwinNotifyCenter(), 
+        NULL, 
+        (CFNotificationCallback)ReloadPrefs, 
+        CFSTR("com.82flex.wtvrbgprefs/saved"), 
+        NULL, 
+        CFNotificationSuspensionBehaviorCoalesce
+    );
+}
