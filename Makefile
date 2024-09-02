@@ -1,4 +1,7 @@
-TARGET := iphone:clang:16.4:14.0
+export PACKAGE_VERSION := 1.1
+
+ARCHS := arm64 arm64e
+TARGET := iphone:clang:16.5:14.0
 INSTALL_TARGET_PROCESSES := SpringBoard
 
 include $(THEOS)/makefiles/common.mk

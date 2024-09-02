@@ -58,4 +58,11 @@ static void RemoveSpecifiersWithKey(NSString *key, NSMutableArray *specifiers) {
 	return _specifiers;
 }
 
+- (void)support {
+    NSURL *url = [NSURL URLWithString:@"https://havoc.app/search/82Flex"];
+    if ([[UIApplication sharedApplication] canOpenURL:url]) {
+        [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
+    }
+}
+
 @end

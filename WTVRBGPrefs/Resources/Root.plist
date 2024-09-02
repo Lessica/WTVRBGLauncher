@@ -121,10 +121,6 @@
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>动画持续时间</string>
-			<key>footerText</key>
-			<string>语音转文字免跳转 v1.0 - @Lessica
-https://github.com/Lessica/WTVRBGLauncher
-</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -149,6 +145,22 @@ https://github.com/Lessica/WTVRBGLauncher
 			<string>持续时间</string>
 			<key>PostNotification</key>
 			<string>com.82flex.wtvrbgprefs/saved</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string></string>
+			<key>footerText</key>
+			<string>请支持我们的其他付费作品，谢谢！</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>label</key>
+			<string>「乌龙工作室」倾情献制</string>
+			<key>action</key>
+			<string>support</string>
 		</dict>
 	</array>
 	<key>title</key>
